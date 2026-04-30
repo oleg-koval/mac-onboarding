@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 )
 
 var exportOutput string
+var exportToStdout bool
 
 var exportCmd = &cobra.Command{
 	Use:   "export",
@@ -19,10 +21,23 @@ var exportCmd = &cobra.Command{
 Secrets are redacted. Run on your source (current) Mac.
 
 Example:
-  mac-onboarding export --output ~/onboard-$(date +%Y%m%d).tar.gz`,
+  mac-onboarding export --output ~/onboard-$(date +%Y%m%d).tar.gz
+  mac-onboarding export --to-stdout | ssh target-mac "mac-onboarding install --from-stdin"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if exportOutput == "" {
-			exportOutput = fmt.Sprintf("onboard-%s.tar.gz", time.Now().Format("20060102"))
+		archivePath := exportOutput
+		if archivePath == "" {
+			archivePath = fmt.Sprintf("onboard-%s.tar.gz", time.Now().Format("20060102"))
+		}
+
+		// If outputting to stdout, use a temp file internally
+		if exportToStdout {
+			f, err := os.CreateTemp("", "mac-onboarding-export-*")
+			if err != nil {
+				return err
+			}
+			archivePath = f.Name()
+			f.Close()
+			defer os.Remove(archivePath)
 		}
 
 		cfg, err := config.Load(cfgFile)
@@ -34,18 +49,34 @@ Example:
 			DryRun:  dryRun,
 			Only:    only,
 			Verbose: verbose,
-			Output:  exportOutput,
+			Output:  archivePath,
 		}
 
 		if dryRun {
-			fmt.Fprintln(os.Stdout, "dry-run: no changes will be made")
+			fmt.Fprintln(os.Stderr, "dry-run: no changes will be made")
 		}
 
-		return runner.Export(cfg, opts)
+		if err := runner.Export(cfg, opts); err != nil {
+			return err
+		}
+
+		// If --to-stdout, pipe archive to stdout after successful export
+		if exportToStdout && !dryRun {
+			f, err := os.Open(archivePath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = io.Copy(os.Stdout, f)
+			return err
+		}
+
+		return nil
 	},
 }
 
 func init() {
 	exportCmd.Flags().StringVarP(&exportOutput, "output", "o", "", "output archive path (default: onboard-YYYYMMDD.tar.gz)")
+	exportCmd.Flags().BoolVar(&exportToStdout, "to-stdout", false, "write archive to stdout instead of file (for piping)")
 	rootCmd.AddCommand(exportCmd)
 }

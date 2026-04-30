@@ -1,47 +1,121 @@
 package cmd
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"os/user"
+
+	"github.com/oleg-koval/mac-onboarding/internal/config"
+	"github.com/oleg-koval/mac-onboarding/internal/runner"
 	"github.com/spf13/cobra"
 )
 
 var bridgeCmd = &cobra.Command{
 	Use:   "bridge",
-	Short: "Live pull configs from a source Mac over Tailscale",
-	Long: `Bridge mode lets the target Mac pull any module's config live from
-the source Mac over SSH via Tailscale — no archive needed.
+	Short: "Pull configs live from source Mac via Tailscale SSH (no archive)",
+	Long: `Bridge mode connects to your source Mac via Tailscale SSH and pulls
+modules live without creating an intermediate archive.
 
-Source Mac:  mac-onboarding bridge serve
-Target Mac:  mac-onboarding bridge pull --from <tailscale-hostname> --module kitty`,
+Requires:
+  - source.host set in onboard.yaml (your source Mac's Tailscale hostname)
+  - Tailscale running on both Macs
+  - Same username on both Macs
+
+Example:
+  mac-onboarding bridge pull --dry-run
+  mac-onboarding bridge pull --only brew,shell`,
 }
-
-var bridgeServeCmd = &cobra.Command{
-	Use:   "serve",
-	Short: "Start bridge server on this (source) Mac",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// Task 14
-		cmd.Println("bridge serve: not yet implemented")
-		return nil
-	},
-}
-
-var (
-	bridgeFrom   string
-	bridgeModule string
-)
 
 var bridgePullCmd = &cobra.Command{
 	Use:   "pull",
-	Short: "Pull a module's config from the source Mac",
+	Short: "Pull modules from source Mac via SSH",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Task 14
-		cmd.Println("bridge pull: not yet implemented")
-		return nil
+		cfg, err := config.Load(cfgFile)
+		if err != nil {
+			return fmt.Errorf("config: %w", err)
+		}
+
+		if cfg == nil || cfg.Source.Host == "" {
+			return fmt.Errorf("bridge: source.host not set in config")
+		}
+
+		sourceHost := cfg.Source.Host
+		currentUser, err := user.Current()
+		if err != nil {
+			return err
+		}
+		username := currentUser.Username
+
+		if dryRun {
+			fmt.Fprintf(os.Stderr, "dry-run: would pull from %s@%s\n", username, sourceHost)
+			return nil
+		}
+
+		// Build remote export command
+		remoteCmd := "mac-onboarding export --to-stdout"
+		if len(only) > 0 {
+			remoteCmd += " --only " + only[0]
+			for _, m := range only[1:] {
+				remoteCmd += "," + m
+			}
+		}
+
+		sshTarget := fmt.Sprintf("%s@%s", username, sourceHost)
+		sshCmd := exec.Command("ssh", "-o", "StrictHostKeyChecking=no", sshTarget, remoteCmd)
+		sshCmd.Stderr = os.Stderr
+
+		fmt.Fprintf(os.Stderr, "bridge: pulling from %s...\n", sshTarget)
+
+		// Get SSH stdout and pipe to temp file
+		stdout, err := sshCmd.StdoutPipe()
+		if err != nil {
+			return err
+		}
+
+		if err := sshCmd.Start(); err != nil {
+			return fmt.Errorf("bridge: ssh failed: %w", err)
+		}
+
+		// Write to temp file
+		f, err := os.CreateTemp("", "mac-onboarding-bridge-*")
+		if err != nil {
+			sshCmd.Wait()
+			return err
+		}
+		archivePath := f.Name()
+		defer os.Remove(archivePath)
+
+		if _, err := io.Copy(f, stdout); err != nil {
+			f.Close()
+			sshCmd.Wait()
+			return err
+		}
+		f.Close()
+
+		if err := sshCmd.Wait(); err != nil {
+			return fmt.Errorf("bridge: ssh command failed: %w", err)
+		}
+
+		fmt.Fprintf(os.Stderr, "bridge: received, installing...\n")
+
+		// Install from temp archive
+		opts := runner.Options{
+			DryRun:  false,
+			Only:    only,
+			Verbose: verbose,
+			Input:   archivePath,
+		}
+
+		return runner.Install(cfg, opts)
 	},
 }
 
 func init() {
-	bridgePullCmd.Flags().StringVar(&bridgeFrom, "from", "", "source Mac Tailscale hostname (required)")
-	bridgePullCmd.Flags().StringVar(&bridgeModule, "module", "", "module to pull (required)")
-	bridgeCmd.AddCommand(bridgeServeCmd, bridgePullCmd)
+	bridgePullCmd.Flags().BoolVar(&dryRun, "dry-run", false, "show what would happen")
+	bridgePullCmd.Flags().StringSliceVar(&only, "only", nil, "run only these modules")
+	bridgePullCmd.Flags().BoolVar(&verbose, "verbose", false, "verbose output")
+	bridgeCmd.AddCommand(bridgePullCmd)
 	rootCmd.AddCommand(bridgeCmd)
 }

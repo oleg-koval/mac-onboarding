@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/oleg-koval/mac-onboarding/internal/config"
@@ -10,6 +11,7 @@ import (
 )
 
 var installInput string
+var installFromStdin bool
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -18,13 +20,32 @@ var installCmd = &cobra.Command{
 and settings on this (target) Mac. MDM-managed paths are skipped safely.
 
 Example:
-  mac-onboarding install --input ~/onboard-20250430.tar.gz`,
+  mac-onboarding install --input ~/onboard-20250430.tar.gz
+  ssh source-mac "mac-onboarding export --to-stdout" | mac-onboarding install --from-stdin`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if installInput == "" {
-			return fmt.Errorf("--input is required")
+		archivePath := installInput
+
+		// If reading from stdin, copy to temp file
+		if installFromStdin {
+			f, err := os.CreateTemp("", "mac-onboarding-install-*")
+			if err != nil {
+				return err
+			}
+			archivePath = f.Name()
+			defer os.Remove(archivePath)
+
+			if _, err := io.Copy(f, os.Stdin); err != nil {
+				f.Close()
+				return err
+			}
+			f.Close()
 		}
-		if _, err := os.Stat(installInput); err != nil {
-			return fmt.Errorf("archive not found: %s", installInput)
+
+		if archivePath == "" {
+			return fmt.Errorf("--input or --from-stdin is required")
+		}
+		if _, err := os.Stat(archivePath); err != nil {
+			return fmt.Errorf("archive not found: %s", archivePath)
 		}
 
 		cfg, err := config.Load(cfgFile)
@@ -36,11 +57,11 @@ Example:
 			DryRun:  dryRun,
 			Only:    only,
 			Verbose: verbose,
-			Input:   installInput,
+			Input:   archivePath,
 		}
 
 		if dryRun {
-			fmt.Fprintln(os.Stdout, "dry-run: no changes will be made")
+			fmt.Fprintln(os.Stderr, "dry-run: no changes will be made")
 		}
 
 		return runner.Install(cfg, opts)
@@ -48,6 +69,7 @@ Example:
 }
 
 func init() {
-	installCmd.Flags().StringVarP(&installInput, "input", "i", "", "input archive path (required)")
+	installCmd.Flags().StringVarP(&installInput, "input", "i", "", "input archive path (required unless using --from-stdin)")
+	installCmd.Flags().BoolVar(&installFromStdin, "from-stdin", false, "read archive from stdin instead of file")
 	rootCmd.AddCommand(installCmd)
 }
