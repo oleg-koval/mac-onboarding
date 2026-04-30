@@ -1,0 +1,114 @@
+# mac-onboarding configuration
+# Copy to onboard.yaml and edit. onboard.yaml is gitignored.
+#
+# All paths support ~ and $HOME expansion.
+# Per-module: set skip: true to exclude any module.
+
+source:
+  # Tailscale hostname of your source Mac (used by `bridge pull`).
+  # Find it: tailscale status | head -1
+  host: your-mac-hostname
+
+modules:
+  bootstrap:
+    # Installs Xcode CLT and Homebrew. Almost always leave enabled.
+    skip: false
+
+  brew:
+    skip: false
+    options:
+      # Path to Brewfile on source Mac (export). Defaults to ~/.Brewfile.
+      brewfile_path: ~/.Brewfile
+
+  shell:
+    skip: false
+    options:
+      # Regex patterns for lines to redact from rc files before archiving.
+      # Matches are replaced with: # REDACTED — restore manually
+      redact_pattern: "export .*(KEY|TOKEN|SECRET|PASSWORD|API)=.*"
+
+  kitty:
+    skip: false
+    options:
+      config_dir: ~/.config/kitty
+
+  cursor:
+    skip: false
+    options:
+      settings_dir: "~/Library/Application Support/Cursor/User"
+
+  claude:
+    skip: false
+    options:
+      config_dir: ~/.claude
+
+  codex:
+    skip: false
+    options:
+      config_dir: ~/.codex
+      # Files to include (everything else is excluded — sqlite, logs, sessions are large/ephemeral)
+      include: "config.toml,AGENTS.md,rules,prompts,automations"
+
+  pi:
+    skip: false
+    options:
+      config_dir: ~/.pi
+
+  skillshare:
+    skip: false
+
+  swiftbar:
+    skip: false
+    options:
+      plugins_dir: "~/Library/Application Support/SwiftBar"
+
+  alfred:
+    skip: false
+    options:
+      # Alfred syncs preferences to a folder you choose.
+      # Set this to your Alfred sync folder path.
+      # Warning: Alfred workflows may contain credentials — review before sharing.
+      sync_dir: "~/Documents/Alfred"
+
+  git:
+    skip: false
+    options:
+      gitconfig: ~/.gitconfig
+      gitignore_global: ~/.gitignore_global
+
+  system:
+    # macOS system defaults (Dock, Finder, keyboard repeat, trackpad, etc.)
+    skip: false
+
+  hotkeys:
+    # Global keyboard shortcuts via com.apple.symbolichotkeys
+    skip: false
+
+  klack:
+    skip: false
+
+  flux:
+    skip: false
+
+  betterdisplay:
+    skip: false
+
+  orbstack:
+    skip: false
+
+  tailscale:
+    skip: false
+
+  shottr:
+    skip: false
+
+  synology:
+    skip: false
+    options:
+      # Hostname of your Synology NAS (credentials are NOT stored — prompted on install)
+      nas_host: your-nas.local
+
+  onepasword:
+    # 1Password cannot be automated for security reasons.
+    # This module prints setup instructions only.
+    skip: false

@@ -1,0 +1,6 @@
+dist/
+onboard.yaml
+*.tar.gz
+*.tar
+*.zip
+onboard-*.tar.gz
