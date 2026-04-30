@@ -8,9 +8,12 @@ import (
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/bootstrap"
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/brew"
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/cursor"
+	_ "github.com/oleg-koval/mac-onboarding/internal/modules/git"
+	_ "github.com/oleg-koval/mac-onboarding/internal/modules/hotkeys"
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/kitty"
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/prefs"
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/shell"
+	_ "github.com/oleg-koval/mac-onboarding/internal/modules/system"
 )
 
 func main() {
