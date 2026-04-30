@@ -50,14 +50,19 @@ jobs:
         with:
           path: artifacts
 
+      - name: List artifacts
+        run: find artifacts -type f
+
       - name: Flatten artifacts
-        run: find artifacts -type f -exec mv {} . \;
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            mac-onboarding-*
+          files: release/*
           body: |
             Release: ${{ github.ref_name }}
 
