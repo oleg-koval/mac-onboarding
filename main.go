@@ -16,6 +16,8 @@ import (
 	_ "github.com/oleg-koval/mac-onboarding/internal/modules/system"
 )
 
+var Version = "dev"
+
 func main() {
 	cmd.Execute()
 }

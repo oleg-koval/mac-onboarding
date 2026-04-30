@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+        run: |
+          VERSION=${GITHUB_REF##*/}
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          go build -o mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }} \
+            -ldflags="-X main.Version=$VERSION -X github.com/oleg-koval/mac-onboarding/cmd.Version=$VERSION -s -w"
+        env:
+          CGO_ENABLED: 0
+
+      - name: Create checksum
+        run: sha256sum mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }} > mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}
+            mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: find artifacts -type f -exec mv {} . \;
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            mac-onboarding-*
+          body: |
+            Release: ${{ github.ref_name }}
+
+            **macOS (Intel - amd64)**
+            ```
+            curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-amd64
+            chmod +x mac-onboarding
+            sudo mv mac-onboarding /usr/local/bin/
+            ```
+
+            **macOS (Apple Silicon - arm64)**
+            ```
+            curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-arm64
+            chmod +x mac-onboarding
+            sudo mv mac-onboarding /usr/local/bin/
+            ```
+
+            **Verify checksum:**
+            ```
+            sha256sum -c mac-onboarding-darwin-*.sha256
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

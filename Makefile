@@ -2,7 +2,7 @@ BINARY := mac-onboarding
 DIST   := dist
 MODULE := github.com/oleg-koval/mac-onboarding
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -ldflags "-X main.version=$(VERSION) -s -w"
+LDFLAGS := -ldflags "-X main.Version=$(VERSION) -s -w -X github.com/oleg-koval/mac-onboarding/cmd.Version=$(VERSION)"
 
 .PHONY: build test lint clean release
 
