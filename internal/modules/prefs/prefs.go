@@ -195,7 +195,6 @@ func (m *simplePlistModule) Install(cfg *config.Config, opts runner.Options, src
 	return nil
 }
 
-
 // ---- Synology --------------------------------------------------------------
 
 type synologyModule struct{}
