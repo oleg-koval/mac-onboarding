@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/oleg-koval/mac-onboarding/internal/updater"
 	"github.com/spf13/cobra"
 )
 
 var (
+	Version = "dev"
 	cfgFile string
 	dryRun  bool
 	only    []string
@@ -15,8 +17,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "mac-onboarding",
-	Short: "Restore your Mac environment from a source machine",
+	Use:     "mac-onboarding",
+	Short:   "Restore your Mac environment from a source machine",
+	Version: Version,
 	Long: `mac-onboarding exports app configs and settings from a source Mac,
 then installs them on a new MDM-managed Mac — without Time Machine.
 
@@ -25,6 +28,13 @@ Target Mac:  mac-onboarding install --input ~/onboard-archive.tar.gz
 
 Bridge mode: mac-onboarding bridge serve   (source)
              mac-onboarding bridge pull --from <hostname> --module kitty   (target)`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		help, _ := cmd.Flags().GetBool("help")
+		if help || dryRun {
+			return nil
+		}
+		return updater.MaybeUpdate(Version, os.Stderr)
+	},
 }
 
 func Execute() {

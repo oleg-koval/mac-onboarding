@@ -66,6 +66,8 @@ make build
 ./dist/mac-onboarding --help
 ```
 
+Homebrew-managed installs self-check for updates on each run and apply them automatically before executing the command. Set `MAC_ONBOARDING_AUTOUPDATE=0` to disable that behavior for a shell session or environment.
+
 ### Export (Source Mac)
 
 ```bash
