@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="mac-onboarding: Fast, privacy-first macOS configuration bootstrapper. Export settings from source Mac, install on new machines—no Time Machine, no iCloud sync.">
+  <meta name="keywords" content="macOS, onboarding, MDM, bootstrap, configuration, setup, privacy, open-source">
+  <meta name="author" content="Oleg Koval">
+  <meta property="og:title" content="mac-onboarding: Privacy-First macOS Configuration Bootstrapper">
+  <meta property="og:description" content="Export your macOS apps, shell configs, system settings, hotkeys, and app preferences from a source Mac, then replay them on a fresh target Mac.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://github.com/oleg-koval/mac-onboarding">
+  <title>mac-onboarding — Privacy-First macOS Configuration Bootstrapper</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      line-height: 1.6;
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      border-bottom: 2px solid #30363d;
+      padding-bottom: 30px;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #58a6ff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tagline {
+      color: #8b949e;
+      margin: 10px 0;
+      font-style: italic;
+    }
+
+    .section {
+      margin-bottom: 40px;
+      border-left: 3px solid #30363d;
+      padding-left: 20px;
+    }
+
+    .section-title {
+      color: #58a6ff;
+      font-size: 18px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .code-block {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+      color: #79c0ff;
+      line-height: 1.5;
+    }
+
+    .code-block code {
+      font-family: inherit;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .feature-item {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      padding: 15px;
+      border-radius: 4px;
+      border-left: 3px solid #58a6ff;
+    }
+
+    .feature-item strong {
+      color: #79c0ff;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .feature-item span {
+      color: #8b949e;
+      font-size: 12px;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .module {
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #79c0ff;
+      text-align: center;
+    }
+
+    .button {
+      display: inline-block;
+      background: #238636;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      margin-right: 10px;
+      margin-top: 10px;
+      border: 1px solid #2ea043;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .button:hover {
+      background: #2ea043;
+      border-color: #3fb950;
+    }
+
+    .button-secondary {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #58a6ff;
+    }
+
+    .button-secondary:hover {
+      background: #30363d;
+      border-color: #58a6ff;
+    }
+
+    .footer {
+      border-top: 2px solid #30363d;
+      padding-top: 20px;
+      margin-top: 40px;
+      color: #8b949e;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .github-link {
+      display: inline-block;
+      background: #21262d;
+      border: 1px solid #30363d;
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .github-link:hover {
+      background: #30363d;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px 15px;
+      }
+
+      .logo {
+        font-size: 20px;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">⚡ mac-onboarding</div>
+      <p class="tagline">Fast, privacy-first macOS configuration bootstrapper for MDM-managed Macs</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ What It Does</div>
+      <p>Export your macOS apps, shell configs, system settings, hotkeys, and app preferences from a source Mac, then replay them on a fresh target Mac. One command, one script.</p>
+      <div class="code-block">
+<code>$ mac-onboarding export ~/onboard.tar.gz
+<span style="color: #8b949e"># → Captures 21 modules: bootstrap, brew, shell, git, system, hotkeys, ...</span>
+
+$ mac-onboarding install ~/onboard.tar.gz
+<span style="color: #8b949e"># → Installs Xcode CLT, Homebrew, apps, dotfiles, settings, hotkeys</span></code>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Why mac-onboarding?</div>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <strong>🔒 Privacy</strong>
+          <span>No cloud sync. Everything local.</span>
+        </div>
+        <div class="feature-item">
+          <strong>🛡️ Secrets Safe</strong>
+          <span>API keys auto-redacted before archiving.</span>
+        </div>
+        <div class="feature-item">
+          <strong>🔍 Auditable</strong>
+          <span>See exactly what gets captured.</span>
+        </div>
+        <div class="feature-item">
+          <strong>📱 MDM-Aware</strong>
+          <span>Won't break enrollment or protected settings.</span>
+        </div>
+        <div class="feature-item">
+          <strong>⚡ Fast</strong>
+          <span>No Time Machine. Single binary.</span>
+        </div>
+        <div class="feature-item">
+          <strong>🚀 Open Source</strong>
+          <span>MIT licensed. Full transparency.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Install</div>
+      <p><strong>Via Homebrew (recommended):</strong></p>
+      <div class="code-block">
+<code>brew tap oleg-koval/homebrew-tap
+brew install mac-onboarding</code>
+      </div>
+
+      <p><strong>Or download from releases:</strong></p>
+      <div class="code-block">
+<code><span style="color: #8b949e"># Apple Silicon (M1/M2/M3)</span>
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.0/mac-onboarding-darwin-arm64
+
+<span style="color: #8b949e"># Intel</span>
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.0/mac-onboarding-darwin-amd64
+
+chmod +x mac-onboarding
+sudo mv mac-onboarding /usr/local/bin/</code>
+      </div>
+
+      <p><strong>Verify installation:</strong></p>
+      <div class="code-block">
+<code>mac-onboarding --help</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Quick Start</div>
+      <div class="code-block">
+<code><span style="color: #8b949e"># Step 1: Copy example config</span>
+cp ~/.local/share/doc/mac-onboarding/onboard.yaml.example onboard.yaml
+
+<span style="color: #8b949e"># Step 2: Dry-run export (safe, shows what will be captured)</span>
+mac-onboarding export --dry-run ~/onboard.tar.gz
+
+<span style="color: #8b949e"># Step 3: Export configs from source Mac</span>
+mac-onboarding export ~/onboard.tar.gz
+
+<span style="color: #8b949e"># Step 4: Transfer to target Mac, then install</span>
+mac-onboarding install --dry-run ~/onboard.tar.gz
+mac-onboarding install ~/onboard.tar.gz</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Supported Modules (21 Total)</div>
+      <div class="module-grid">
+        <div class="module">bootstrap</div>
+        <div class="module">brew</div>
+        <div class="module">shell</div>
+        <div class="module">git</div>
+        <div class="module">system</div>
+        <div class="module">hotkeys</div>
+        <div class="module">kitty</div>
+        <div class="module">cursor</div>
+        <div class="module">claude</div>
+        <div class="module">codex</div>
+        <div class="module">pi</div>
+        <div class="module">swiftbar</div>
+        <div class="module">alfred</div>
+        <div class="module">klack</div>
+        <div class="module">flux</div>
+        <div class="module">betterdisplay</div>
+        <div class="module">orbstack</div>
+        <div class="module">tailscale</div>
+        <div class="module">shottr</div>
+        <div class="module">synology</div>
+        <div class="module">onepassword</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Bridge Mode (Live Pull)</div>
+      <p>Skip the archive—pull directly from source Mac via Tailscale SSH:</p>
+      <div class="code-block">
+<code><span style="color: #8b949e"># On target Mac (requires source Mac's Tailscale hostname in config)</span>
+mac-onboarding bridge pull --only brew,shell</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Security & Privacy</div>
+      <ul style="margin-left: 20px;">
+        <li><strong>Secrets redacted:</strong> Shell rc files, git credentials, API keys filtered before archiving</li>
+        <li><strong>SSH keys not migrated:</strong> You manage these manually per security best practices</li>
+        <li><strong>MDM-safe:</strong> Won't overwrite enrollment settings or protected system defaults</li>
+        <li><strong>Offline capable:</strong> Works without internet after initial config</li>
+        <li><strong>Auditable:</strong> Run <code style="background: #161b22; padding: 2px 4px;">tar tzf onboard.tar.gz</code> to inspect archive contents</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-title">→ Resources</div>
+      <a href="https://github.com/oleg-koval/mac-onboarding" class="button">View on GitHub</a>
+      <a href="https://github.com/oleg-koval/mac-onboarding#readme" class="button button-secondary">Full Documentation</a>
+      <a href="https://github.com/oleg-koval/mac-onboarding/issues" class="button button-secondary">Report Issues</a>
+    </div>
+
+    <div class="footer">
+      <p>Built by <a href="https://github.com/oleg-koval">Oleg Koval</a> | <a href="https://olegkoval.com">olegkoval.com</a></p>
+      <p style="margin-top: 10px; color: #6e7681;">MIT License | Open Source</p>
+    </div>
+  </div>
+</body>
+</html>
