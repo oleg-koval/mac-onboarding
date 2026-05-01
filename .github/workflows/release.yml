@@ -60,29 +60,28 @@ jobs:
           ls -la release/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: release/*
-          body: |
-            Release: ${{ github.ref_name }}
-
-            **macOS (Intel - amd64)**
-            ```
+        run: |
+          cd release
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "**macOS (Intel - amd64)**
+            \`\`\`
             curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-amd64
             chmod +x mac-onboarding
             sudo mv mac-onboarding /usr/local/bin/
-            ```
+            \`\`\`
 
             **macOS (Apple Silicon - arm64)**
-            ```
+            \`\`\`
             curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-arm64
             chmod +x mac-onboarding
             sudo mv mac-onboarding /usr/local/bin/
-            ```
+            \`\`\`
 
             **Verify checksum:**
-            ```
+            \`\`\`
             sha256sum -c mac-onboarding-darwin-*.sha256
-            ```
+            \`\`\`" \
+            mac-onboarding-*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
