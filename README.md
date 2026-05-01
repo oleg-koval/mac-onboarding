@@ -1,159 +1,116 @@
-# mac-onboarding
+<p align="center">
+  <a href="https://github.com/oleg-koval/mac-onboarding/actions/workflows/test.yml"><img src="https://github.com/oleg-koval/mac-onboarding/actions/workflows/test.yml/badge.svg" alt="tests"></a>
+  <a href="https://goreportcard.com/report/github.com/oleg-koval/mac-onboarding"><img src="https://goreportcard.com/badge/github.com/oleg-koval/mac-onboarding" alt="Go Report Card"></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/oleg-koval/mac-onboarding"><img src="https://api.securityscorecards.dev/projects/github.com/oleg-koval/mac-onboarding/badge" alt="OpenSSF Scorecard"></a>
+</p>
 
-Fast, privacy-first macOS configuration bootstrapper for MDM-managed Macs. Export settings from your source Mac, install on new machines—no Time Machine, no iCloud sync.
+<p align="center">
+  <img src="./logo.svg" width="120" height="120" alt="mac-onboarding icon">
+</p>
 
-## What It Does
+<h1 align="center">mac-onboarding</h1>
 
-`mac-onboarding` captures your macOS apps, shell configs, system settings, hotkeys, and app preferences from a source Mac, then replays them on a fresh target Mac. One script, one command.
+<p align="center">
+  Privacy-first macOS configuration bootstrapper<br>
+  <strong>Export a source Mac, restore a fresh Mac, and keep setup repeatable</strong>
+</p>
 
-**Typical flow:**
+---
+
+## Features
+
+- **Mac Configuration Export** - Capture apps, dotfiles, shell config, system settings, hotkeys, and app preferences
+- **Safe Restore Flow** - Replay a portable archive on a new Mac with dry-run support
+- **Homebrew Bundle Support** - Export `~/.Brewfile` and restore packages with `brew bundle install`
+- **Bridge Mode** - Pull configuration live from a source Mac over Tailscale SSH without an intermediate archive
+- **MDM-Aware Defaults** - Avoid protected enrollment settings and only apply allowed macOS defaults
+- **Secret Redaction** - Filter shell rc files, git credentials, API keys, tokens, and AI tool config
+- **Selective Modules** - Run the whole setup or narrow to modules such as `brew`, `shell`, `git`, or `kitty`
+- **Homebrew Distribution** - Install with `brew install mac-onboarding`
+- **Auto-Updates** - Homebrew installs check for updates on launch and upgrade before running
+- **Go CLI** - Small Cobra-based binary with focused commands and no cloud dependency
+
+## Installation
+
+### Using Homebrew (Recommended)
+
 ```bash
-# On source Mac
-mac-onboarding export ~/onboard.tar.gz
-
-# Transfer onboard.tar.gz to target Mac, then:
-mac-onboarding install ~/onboard.tar.gz
-```
-
-## Privacy & Security
-
-**By design:**
-- **No cloud sync.** Everything stays local or goes over SSH (Tailscale).
-- **Secrets redacted.** Shell rc files, git credentials, API keys are filtered before archiving.
-- **Auditable.** See exactly what gets captured—no hidden backups.
-- **MDM-aware.** Won't overwrite enrollment settings or protected system defaults.
-- **Offline.** Works without internet after initial config.
-
-**What's NOT captured:**
-- SSH private keys (you add those manually)
-- Password manager data (1Password has a guide)
-- Cloud credentials (prompted during install)
-- Large cache/logs
-
-**Before open-sourcing:**
-- Review `onboard.yaml` for any API keys you missed
-- Test credential redaction patterns
-- Audit module skip flags
-- Check exported archive contents
-
-## Quick Start
-
-### Install
-
-**Via Homebrew:**
-```bash
-brew tap oleg-koval/homebrew-tap
+brew tap oleg-koval/tap
 brew install mac-onboarding
+mac-onboarding --version
 ```
 
-**From GitHub Releases:**
-```bash
-# Intel
-curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.1.0/mac-onboarding-darwin-amd64
+### From Source
 
+```bash
+git clone https://github.com/oleg-koval/mac-onboarding.git
+cd mac-onboarding
+make build
+./dist/mac-onboarding --version
+```
+
+### Direct Download
+
+Download macOS binaries from [GitHub Releases](https://github.com/oleg-koval/mac-onboarding/releases/tag/v0.2.8).
+
+```bash
 # Apple Silicon
-curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.1.0/mac-onboarding-darwin-arm64
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.8/mac-onboarding-darwin-arm64
+
+# Intel
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.8/mac-onboarding-darwin-amd64
 
 chmod +x mac-onboarding
 sudo mv mac-onboarding /usr/local/bin/
 ```
 
-**Or build from source:**
-```bash
-git clone https://github.com/oleg-koval/mac-onboarding.git
-cd mac-onboarding
-make build
-./dist/mac-onboarding --help
-```
+Set `MAC_ONBOARDING_AUTOUPDATE=0` to disable startup auto-update checks for Homebrew-managed installs.
 
-Homebrew-managed installs self-check for updates on each run and apply them automatically before executing the command. Set `MAC_ONBOARDING_AUTOUPDATE=0` to disable that behavior for a shell session or environment.
+## Quick Start
 
-### Export (Source Mac)
+### Export From Source Mac
 
 ```bash
-# Dry-run first
+# Inspect what will be captured
 mac-onboarding export --dry-run ~/onboard.tar.gz
 
-# Verify redaction worked
+# Create the archive
 mac-onboarding export ~/onboard.tar.gz
-# → Captures 21 modules: bootstrap, brew, shell, git, system, hotkeys, ...
 ```
 
-Copy `~/onboard.tar.gz` to target Mac (USB, iCloud, scp, whatever).
-
-### Install (Target Mac)
+### Install On Target Mac
 
 ```bash
-# Dry-run first  
+# Inspect what will be restored
 mac-onboarding install --dry-run ~/onboard.tar.gz
 
-# Apply
+# Apply the setup
 mac-onboarding install ~/onboard.tar.gz
-# → Installs Xcode CLT, Homebrew, apps, dotfiles, settings, hotkeys
 ```
 
-### Bridge Mode (Live Pull)
-
-Skip the archive—pull directly from source Mac via Tailscale SSH:
+### Bridge Mode
 
 ```bash
-# On target Mac (requires source Mac's hostname in onboard.yaml)
-# First, verify source.host in onboard.yaml points to your source Mac's Tailscale hostname
-cat onboard.yaml | grep -A2 "^source:"
+# Pull everything from the configured source Mac
+mac-onboarding bridge pull
 
-# Dry-run
-mac-onboarding bridge pull --dry-run
-
-# Apply
-mac-onboarding bridge pull --only brew,shell  # or run all modules
+# Pull only selected modules
+mac-onboarding bridge pull --only brew,shell,git
 ```
 
-**Requirements:**
-- `source.host` set to source Mac's Tailscale hostname in `onboard.yaml`
-- Tailscale running on both Macs
-- Same username on both Macs (uses `ssh user@hostname`)
-- Source Mac reachable via Tailscale SSH
-
-**How it works:**
-1. Target Mac SSHes to source Mac via Tailscale
-2. Runs `mac-onboarding export --to-stdout`
-3. Pipes archive to local install (no intermediate file)
-4. Much faster for single modules: `bridge pull --only kitty,shell`
-
-## Supported Modules (21 Total)
-
-| Module | Exports | Install Behavior |
-|--------|---------|------------------|
-| **bootstrap** | — | Installs Xcode CLT, Homebrew, detects MDM |
-| **brew** | `~/.Brewfile` | `brew bundle install` |
-| **shell** | `.zshrc`, `.bashrc`, `.zprofile`, `.p10k.zsh`, oh-my-zsh custom | Redacts secrets, restores rc files |
-| **git** | `.gitconfig`, `.gitignore_global`, `.config/git/` | Redacts credential helpers |
-| **system** | macOS defaults: Dock, Finder, keyboard repeat, trackpad, screenshots | Filtered by allowlist (MDM-safe) |
-| **hotkeys** | `com.apple.symbolichotkeys.plist` | Restarts pbs daemon |
-| **kitty** | `~/.config/kitty/` | Full restore |
-| **cursor** | Settings, keybindings, snippets, extensions | Installs extensions via CLI |
-| **claude** | `~/.claude/` config | Full restore |
-| **codex** | `~/.codex/config.toml`, agents, rules, prompts | Excludes sqlite/logs (ephemeral) |
-| **pi** | `~/.pi/` config | Full restore |
-| **swiftbar** | Plugin dir | Full restore |
-| **alfred** | Alfred sync folder | Full restore (⚠️ audit for credentials) |
-| **klack** | Settings plist | Full restore |
-| **flux** | Settings plist | Full restore |
-| **betterdisplay** | Settings plist | Full restore |
-| **orbstack** | Settings plist | Full restore |
-| **tailscale** | Settings plist | Full restore |
-| **shottr** | Settings plist | Full restore |
-| **synology** | NAS hostname reference only | Prompts for credentials on install |
-| **onepassword** | — | Prints setup guide only |
+Bridge mode requires `source.host` in `onboard.yaml`, Tailscale SSH access, and the same username on both Macs.
 
 ## Configuration
 
-Copy `onboard.yaml.example` to `onboard.yaml` and edit:
+Copy the example config and edit it for your machines:
+
+```bash
+cp onboard.yaml.example onboard.yaml
+```
 
 ```yaml
 source:
-  # Tailscale hostname for bridge mode (bridge pull only)
-  host: your-mac-hostname
+  host: source-mac.tailnet-name.ts.net
 
 modules:
   bootstrap:
@@ -167,7 +124,6 @@ modules:
   shell:
     skip: false
     options:
-      # Regex to redact from rc files
       redact_pattern: "export .*(KEY|TOKEN|SECRET|PASSWORD|API)=.*"
 
   git:
@@ -175,119 +131,158 @@ modules:
 
   system:
     skip: false
-
-  # ... (see onboard.yaml.example for all modules)
 ```
 
-**Path expansion:** All paths support `~` and `$HOME`.
+All paths support `~` and `$HOME`. Set `skip: true` on any module you do not want to export or restore.
 
-**Per-module control:** Set `skip: true` to exclude any module.
+### Environment Variables
 
-**Dry-run always:** Test with `--dry-run` before committing to changes.
-
-## Usage
-
-### Export
-
-```bash
-# Standard export to archive
-mac-onboarding export [flags] ARCHIVE_PATH
-
-Flags:
-  --config string       Config file (default: ./onboard.yaml)
-  --dry-run             Show what would happen
-  --only strings        Run only these modules (comma-separated)
-  --verbose             Verbose output
-```
+- `MAC_ONBOARDING_AUTOUPDATE` - Set to `0` to disable Homebrew startup auto-updates
 
 Example:
-```bash
-mac-onboarding export --only brew,shell ~/quick.tar.gz
-```
-
-### Install
 
 ```bash
-# Restore from archive
-mac-onboarding install [flags] ARCHIVE_PATH
-
-Flags:
-  --config string       Config file
-  --dry-run             Show what would happen
-  --only strings        Run only these modules
-  --verbose             Verbose output
+MAC_ONBOARDING_AUTOUPDATE=0 mac-onboarding export ~/onboard.tar.gz
 ```
 
-### Bridge (Live Pull)
+## Commands Reference
+
+### Global Flags
+
+- `--config <path>` - Config file, defaults to `./onboard.yaml` or `~/.config/mac-onboarding/onboard.yaml`
+- `--dry-run` - Print what would happen without making changes
+- `--only <modules>` - Run only selected modules
+- `-v, --verbose` - Print verbose output
+- `-h, --help` - Show help
+- `--version` - Show version
+
+### Export Subcommand
 
 ```bash
-# Pull from source Mac via Tailscale SSH (no archive)
-mac-onboarding bridge pull [flags]
-
-Flags:
-  --config string       Config file (required, must have source.host)
-  --dry-run             Show what would happen
-  --only strings        Run only these modules
-  --verbose             Verbose output
+mac-onboarding export [ARCHIVE_PATH]
+mac-onboarding export --output ~/onboard.tar.gz
+mac-onboarding export --to-stdout
 ```
 
-**Requirements:**
-- Both Macs on same Tailscale network
-- Source Mac has `mac-onboarding` installed
-- Target Mac has `onboard.yaml` with source Mac's Tailscale hostname
-
-## Dry-Run First
-
-Always test with `--dry-run`:
+### Install Subcommand
 
 ```bash
-mac-onboarding export --dry-run ~/test.tar.gz
-# Review output, then:
-mac-onboarding export ~/test.tar.gz
+mac-onboarding install [ARCHIVE_PATH]
+mac-onboarding install --input ~/onboard.tar.gz
+mac-onboarding install --from-stdin
 ```
 
-## Security Considerations
-
-1. **Archive contents:** `tar tzf onboard.tar.gz` to audit before transfer.
-2. **Secrets redaction:** Verify your rc files, git config, AI tool configs don't leak API keys.
-3. **Alfred workflows:** May contain credentials—review sync folder.
-4. **MDM:** Won't override enrollment or restricted defaults.
-5. **Tailscale SSH:** Requires Tailscale running; uses your account's SSH keys.
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| `config: no onboard.yaml found` | Copy `onboard.yaml.example` to `onboard.yaml` and edit source.host |
-| Module skip not working | Check YAML indentation (spaces, not tabs) |
-| Secrets leaked in archive | Review `shell.redact_pattern` in config |
-| MDM won't let system defaults install | Check `system` module allowlist—some domains are protected |
-| Bridge pull fails | Verify source Mac's Tailscale hostname in config; run `tailscale status` on source |
-| Hotkeys not applied | May need System Preferences restart; pbs daemon auto-restarts |
-
-## Building
+### Bridge Subcommand
 
 ```bash
-make build           # Build mac-onboarding binary
-make test            # Run tests
-make lint            # Run go vet
-make release         # Build darwin/amd64 and darwin/arm64 binaries
-make clean           # Clean build artifacts
+mac-onboarding bridge pull
+mac-onboarding bridge pull --only brew,shell
+mac-onboarding bridge pull --dry-run
 ```
 
-## CI/CD
+## Supported Modules
 
-- `test.yml` runs on every pull request and push to `main`: `go test`, `go vet`, `staticcheck`, `gofmt` check, and a build smoke test.
-- `release.yml` runs on every push to `main`: it computes and pushes the next patch tag from the latest `v*` tag, publishes the macOS binaries to GitHub Releases, and updates `oleg-koval/homebrew-tap`.
+| Module | Exports | Install behavior |
+| --- | --- | --- |
+| `bootstrap` | None | Installs Xcode CLT, Homebrew, detects MDM |
+| `brew` | `~/.Brewfile` | Runs `brew bundle install` |
+| `shell` | zsh/bash rc files, oh-my-zsh custom | Redacts secrets and restores rc files |
+| `git` | `.gitconfig`, `.gitignore_global`, `.config/git/` | Redacts credential helpers |
+| `system` | Dock, Finder, keyboard, trackpad, screenshots | Applies MDM-safe defaults |
+| `hotkeys` | `com.apple.symbolichotkeys.plist` | Restores hotkeys and restarts `pbs` |
+| `kitty` | `~/.config/kitty/` | Restores terminal config |
+| `cursor` | Settings, keybindings, snippets, extensions | Restores config and installs extensions |
+| `ai_tools` | Claude, Codex, pi.dev config | Restores config while excluding ephemeral files |
+| `prefs` | SwiftBar, Alfred, Klack, flux, BetterDisplay, OrbStack, Tailscale, Shottr, Synology, 1Password | Restores supported app preferences or prints setup guidance |
 
-Required secret for release automation:
+## System Requirements
 
-- `HOMEBREW_TAP_GITHUB_TOKEN`: fine-grained GitHub token with `contents: write` access to `oleg-koval/homebrew-tap`.
+- macOS 11+ Big Sur or later
+- Git
+- Homebrew, installed automatically by the bootstrap module when needed
+- Tailscale, only required for bridge mode
+- Go 1.25+ for source builds
+
+## Documentation
+
+- [Website](https://mac.olegkoval.com/) - Project landing page
+- [Example config](onboard.yaml.example) - Complete module configuration template
+- [GitHub Releases](https://github.com/oleg-koval/mac-onboarding/releases) - Published binaries
+- [Issues](https://github.com/oleg-koval/mac-onboarding/issues) - Bug reports and feature requests
+
+## Use Cases
+
+### Fresh Mac Setup
+
+Export on the old Mac, move the archive, then restore on the new Mac:
+
+```bash
+mac-onboarding export ~/onboard.tar.gz
+mac-onboarding install ~/onboard.tar.gz
+```
+
+### Repeatable Workstation Baseline
+
+Keep `onboard.yaml` in a private repo and run only the modules you trust for team machines:
+
+```bash
+mac-onboarding export --only brew,shell,git ~/baseline.tar.gz
+mac-onboarding install --only brew,shell,git ~/baseline.tar.gz
+```
+
+### Live Migration Over Tailscale
+
+Pull selected modules directly from the source Mac:
+
+```bash
+mac-onboarding bridge pull --only brew,shell,kitty
+```
+
+## Architecture
+
+mac-onboarding is built with:
+
+- **Go 1.25+** - Single compiled CLI binary
+- **Cobra** - Command and flag handling
+- **YAML** - Human-readable setup configuration
+- **tar.gz archives** - Portable export format
+- **Homebrew** - Package restore and binary distribution
+- **Tailscale SSH** - Optional live bridge transport
+
+The tool is intentionally local-first: no hosted backend, no cloud sync, and no remote state.
+
+## Project Status
+
+- **Alpha Release** - Current release line `v0.2.x`
+- Tests passing across core archive, config, shell, and updater packages
+- GitHub Actions build and release automation active
+- Homebrew tap distribution active
+- macOS-focused by design
+
+## Security Notes
+
+- Archives should be reviewed before transfer: `tar tzf onboard.tar.gz`
+- Alfred workflows and app preference folders may contain credentials
+- SSH private keys, password manager data, and cloud sessions are not captured
+- MDM-protected settings are skipped or constrained by allowlist behavior
 
 ## Contributing
 
-Issues and PRs welcome. Before open-sourcing, audit for any hardcoded paths, credentials, or MDM-specific logic.
+Issues and PRs welcome. Keep changes small, tested, and aligned with the existing module structure.
 
 ## License
 
-MIT (coming soon)
+MIT
+
+## Author
+
+[@oleg-koval](https://github.com/oleg-koval)
+
+---
+
+<p align="center">
+  <strong>mac-onboarding keeps Mac setup repeatable without cloud sync or Time Machine</strong><br>
+  <a href="https://github.com/oleg-koval/mac-onboarding/issues">Report Issues</a> •
+  <a href="https://github.com/oleg-koval/mac-onboarding/releases">Releases</a> •
+  <a href="https://mac.olegkoval.com/">Website</a>
+</p>
