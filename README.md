@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://github.com/oleg-koval/mac-onboarding/actions/workflows/test.yml"><img src="https://github.com/oleg-koval/mac-onboarding/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <a href="https://goreportcard.com/report/github.com/oleg-koval/mac-onboarding"><img src="https://goreportcard.com/badge/github.com/oleg-koval/mac-onboarding" alt="Go Report Card"></a>
-  <a href="https://securityscorecards.dev/viewer/?uri=github.com/oleg-koval/mac-onboarding"><img src="https://api.securityscorecards.dev/projects/github.com/oleg-koval/mac-onboarding/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/oleg-koval/mac-onboarding"><img src="https://api.scorecard.dev/projects/github.com/oleg-koval/mac-onboarding/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
 <p align="center">
