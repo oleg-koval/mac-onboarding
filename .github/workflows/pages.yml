@@ -32,6 +32,8 @@ jobs:
           mkdir -p public
           cp index.html public/index.html
           cp CNAME public/CNAME
+          cp social-card.png public/social-card.png
+          cp social-card.svg public/social-card.svg
           touch public/.nojekyll
 
       - name: Upload Pages artifact
