@@ -44,6 +44,20 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Releasing $version"
 
+      - name: Create and push release tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION" "${{ github.sha }}"
+          git push origin "$VERSION"
+
       - name: Build release binaries
         env:
           CGO_ENABLED: 0
@@ -79,7 +93,6 @@ jobs:
               --clobber
           else
             gh release create "$VERSION" \
-              --target "${{ github.sha }}" \
               --title "Release $VERSION" \
               --generate-notes \
               release/mac-onboarding-darwin-amd64 \

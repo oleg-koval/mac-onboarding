@@ -253,7 +253,7 @@ make clean         # Clean dist/
 Automated tests and releases via GitHub Actions:
 
 - **test.yml** — runs on every push/PR: go test, go vet, staticcheck, fmt check
-- **release.yml** — runs on every push to `main`: increments the latest patch version, builds Intel + Apple Silicon binaries, creates a GitHub release with checksums, and updates the Homebrew tap formula
+- **release.yml** — runs on every push to `main`: increments and pushes the latest patch version tag, builds Intel + Apple Silicon binaries, creates a GitHub release with checksums, and updates the Homebrew tap formula
 
 **Release prerequisites:**
 

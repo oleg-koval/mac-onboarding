@@ -276,7 +276,7 @@ make clean           # Clean build artifacts
 ## CI/CD
 
 - `test.yml` runs on every pull request and push to `main`: `go test`, `go vet`, `staticcheck`, `gofmt` check, and a build smoke test.
-- `release.yml` runs on every push to `main`: it computes the next patch tag from the latest `v*` tag, publishes the macOS binaries to GitHub Releases, and updates `oleg-koval/homebrew-tap`.
+- `release.yml` runs on every push to `main`: it computes and pushes the next patch tag from the latest `v*` tag, publishes the macOS binaries to GitHub Releases, and updates `oleg-koval/homebrew-tap`.
 
 Required secret for release automation:
 
