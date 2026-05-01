@@ -15,16 +15,22 @@ var exportOutput string
 var exportToStdout bool
 
 var exportCmd = &cobra.Command{
-	Use:   "export",
+	Use:   "export [ARCHIVE_PATH]",
 	Short: "Export configs and settings from this Mac into an archive",
 	Long: `Packages your app configs, dotfiles, and settings into a portable archive.
 Secrets are redacted. Run on your source (current) Mac.
 
+The archive path can be specified as a positional argument or via --output flag.
+If neither is provided, defaults to onboard-YYYYMMDD.tar.gz in current directory.
+
 Example:
-  mac-onboarding export --output ~/onboard-$(date +%Y%m%d).tar.gz
-  mac-onboarding export --to-stdout | ssh target-mac "mac-onboarding install --from-stdin"`,
+  mac-onboarding export ~/onboard.tar.gz
+  mac-onboarding export --to-stdout | ssh target-mac "mac-onboarding install"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		archivePath := exportOutput
+		if archivePath == "" && len(args) > 0 {
+			archivePath = args[0]
+		}
 		if archivePath == "" {
 			archivePath = fmt.Sprintf("onboard-%s.tar.gz", time.Now().Format("20060102"))
 		}

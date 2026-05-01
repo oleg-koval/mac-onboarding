@@ -14,16 +14,23 @@ var installInput string
 var installFromStdin bool
 
 var installCmd = &cobra.Command{
-	Use:   "install",
+	Use:   "install [ARCHIVE_PATH]",
 	Short: "Install configs and apps on this Mac from an archive",
 	Long: `Reads the archive produced by 'export' and restores apps, configs,
 and settings on this (target) Mac. MDM-managed paths are skipped safely.
 
+The archive path can be specified as a positional argument, via --input flag,
+or via --from-stdin to read from a pipe.
+
 Example:
-  mac-onboarding install --input ~/onboard-20250430.tar.gz
+  mac-onboarding install ~/onboard.tar.gz
+  mac-onboarding install --dry-run ~/onboard.tar.gz
   ssh source-mac "mac-onboarding export --to-stdout" | mac-onboarding install --from-stdin`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		archivePath := installInput
+		if archivePath == "" && len(args) > 0 {
+			archivePath = args[0]
+		}
 
 		// If reading from stdin, copy to temp file
 		if installFromStdin {
