@@ -268,10 +268,19 @@ mac-onboarding export ~/test.tar.gz
 ```bash
 make build           # Build mac-onboarding binary
 make test            # Run tests
+make lint            # Run go vet
+make release         # Build darwin/amd64 and darwin/arm64 binaries
 make clean           # Clean build artifacts
 ```
 
-Builds both `darwin/amd64` and `darwin/arm64` (Intel + Apple Silicon).
+## CI/CD
+
+- `test.yml` runs on every pull request and push to `main`: `go test`, `go vet`, `staticcheck`, `gofmt` check, and a build smoke test.
+- `release.yml` runs on every push to `main`: it computes the next patch tag from the latest `v*` tag, publishes the macOS binaries to GitHub Releases, and updates `oleg-koval/homebrew-tap`.
+
+Required secret for release automation:
+
+- `HOMEBREW_TAP_GITHUB_TOKEN`: fine-grained GitHub token with `contents: write` access to `oleg-koval/homebrew-tap`.
 
 ## Contributing
 

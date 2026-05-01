@@ -253,14 +253,14 @@ make clean         # Clean dist/
 Automated tests and releases via GitHub Actions:
 
 - **test.yml** — runs on every push/PR: go test, go vet, staticcheck, fmt check
-- **release.yml** — triggered on git tag (v0.1.0, etc.): builds Intel + Apple Silicon binaries, creates GitHub release with checksums
+- **release.yml** — runs on every push to `main`: increments the latest patch version, builds Intel + Apple Silicon binaries, creates a GitHub release with checksums, and updates the Homebrew tap formula
 
-**To release:**
+**Release prerequisites:**
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
-# → GitHub Actions builds and releases automatically
+# GitHub repo secret required:
+# HOMEBREW_TAP_GITHUB_TOKEN
+# -> Fine-grained token with contents:write on oleg-koval/homebrew-tap
 ```
 
 ## Examples

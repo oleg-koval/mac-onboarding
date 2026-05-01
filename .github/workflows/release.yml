@@ -2,88 +2,161 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [darwin]
-        goarch: [amd64, arm64]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.25"
 
-      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+      - name: Compute next version
+        id: version
         run: |
-          VERSION=${GITHUB_REF##*/}
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-          go build -o mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }} \
-            -ldflags="-X main.Version=$VERSION -X github.com/oleg-koval/mac-onboarding/cmd.Version=$VERSION -s -w"
+          latest_tag=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+
+          if [ -z "$latest_tag" ]; then
+            version="v0.1.0"
+          else
+            semver=${latest_tag#v}
+            IFS=. read -r major minor patch <<EOF
+          $semver
+          EOF
+            version="v${major}.${minor}.$((patch + 1))"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version"
+
+      - name: Build release binaries
         env:
           CGO_ENABLED: 0
-
-      - name: Create checksum
-        run: sha256sum mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }} > mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: |
-            mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}
-            mac-onboarding-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: List artifacts
-        run: find artifacts -type f
-
-      - name: Flatten artifacts
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir -p release
-          find artifacts -type f -exec cp {} release/ \;
-          ls -la release/
 
-      - name: Create Release
+          GOOS=darwin GOARCH=amd64 \
+            go build -o release/mac-onboarding-darwin-amd64 \
+            -ldflags="-X main.Version=$VERSION -X github.com/oleg-koval/mac-onboarding/cmd.Version=$VERSION -s -w" .
+
+          GOOS=darwin GOARCH=arm64 \
+            go build -o release/mac-onboarding-darwin-arm64 \
+            -ldflags="-X main.Version=$VERSION -X github.com/oleg-koval/mac-onboarding/cmd.Version=$VERSION -s -w" .
+
+      - name: Create checksums
         run: |
           cd release
-          gh release create ${{ github.ref_name }} \
-            --title "Release ${{ github.ref_name }}" \
-            --notes "**macOS (Intel - amd64)**
-            \`\`\`
-            curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-amd64
-            chmod +x mac-onboarding
-            sudo mv mac-onboarding /usr/local/bin/
-            \`\`\`
+          sha256sum mac-onboarding-darwin-amd64 > mac-onboarding-darwin-amd64.sha256
+          sha256sum mac-onboarding-darwin-arm64 > mac-onboarding-darwin-arm64.sha256
 
-            **macOS (Apple Silicon - arm64)**
-            \`\`\`
-            curl -Lo mac-onboarding https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/mac-onboarding-darwin-arm64
-            chmod +x mac-onboarding
-            sudo mv mac-onboarding /usr/local/bin/
-            \`\`\`
-
-            **Verify checksum:**
-            \`\`\`
-            sha256sum -c mac-onboarding-darwin-*.sha256
-            \`\`\`" \
-            mac-onboarding-*
+      - name: Create GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" \
+              release/mac-onboarding-darwin-amd64 \
+              release/mac-onboarding-darwin-amd64.sha256 \
+              release/mac-onboarding-darwin-arm64 \
+              release/mac-onboarding-darwin-arm64.sha256 \
+              --clobber
+          else
+            gh release create "$VERSION" \
+              --target "${{ github.sha }}" \
+              --title "Release $VERSION" \
+              --generate-notes \
+              release/mac-onboarding-darwin-amd64 \
+              release/mac-onboarding-darwin-amd64.sha256 \
+              release/mac-onboarding-darwin-arm64 \
+              release/mac-onboarding-darwin-arm64.sha256
+          fi
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release/
+
+  update-homebrew-tap:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release
+
+      - name: Check out tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: oleg-koval/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
+        env:
+          VERSION: ${{ needs.build-and-release.outputs.version }}
+        run: |
+          arm_sha=$(cut -d' ' -f1 release/mac-onboarding-darwin-arm64.sha256)
+          amd_sha=$(cut -d' ' -f1 release/mac-onboarding-darwin-amd64.sha256)
+          version_number=${VERSION#v}
+
+          mkdir -p homebrew-tap/Formula
+
+          cat > homebrew-tap/Formula/mac-onboarding.rb <<EOF
+          class MacOnboarding < Formula
+            desc "Export macOS configs and settings, install on a new Mac without Time Machine"
+            homepage "https://github.com/oleg-koval/mac-onboarding"
+            version "$version_number"
+            license "MIT"
+
+            if Hardware::CPU.arm?
+              url "https://github.com/oleg-koval/mac-onboarding/releases/download/$VERSION/mac-onboarding-darwin-arm64"
+              sha256 "$arm_sha"
+            else
+              url "https://github.com/oleg-koval/mac-onboarding/releases/download/$VERSION/mac-onboarding-darwin-amd64"
+              sha256 "$amd_sha"
+            end
+
+            def install
+              bin.install Dir.glob("mac-onboarding*").first => "mac-onboarding"
+            end
+
+            test do
+              system "#{bin}/mac-onboarding", "--help"
+            end
+          end
+          EOF
+
+      - name: Commit and push formula update
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/mac-onboarding.rb
+
+          if git diff --cached --quiet; then
+            echo "No Homebrew formula changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(formula): update mac-onboarding to ${{ needs.build-and-release.outputs.version }}"
+          git push origin HEAD:main
