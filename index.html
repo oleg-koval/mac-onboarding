@@ -18,6 +18,7 @@
   <meta name="twitter:title" content="mac-onboarding: Privacy-First macOS Configuration Bootstrapper">
   <meta name="twitter:description" content="Export your macOS apps, shell configs, system settings, hotkeys, and app preferences from a source Mac, then replay them on a fresh target Mac.">
   <meta name="twitter:image" content="https://mac.olegkoval.com/social-card.png">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <title>mac-onboarding — Privacy-First macOS Configuration Bootstrapper</title>
   <style>
     * {
@@ -55,6 +56,13 @@
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .logo img {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      display: block;
     }
 
     .tagline {
@@ -210,6 +218,12 @@
         font-size: 20px;
       }
 
+      .logo img {
+        width: 28px;
+        height: 28px;
+        flex-basis: 28px;
+      }
+
       .feature-grid {
         grid-template-columns: 1fr;
       }
@@ -219,7 +233,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">⚡ mac-onboarding</div>
+      <div class="logo"><img src="/logo.svg" alt="mac-onboarding logo">mac-onboarding</div>
       <p class="tagline">Fast, privacy-first macOS configuration bootstrapper for MDM-managed Macs</p>
     </div>
 
