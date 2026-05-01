@@ -40,15 +40,30 @@ mac-onboarding install ~/onboard.tar.gz
 
 ### Install
 
+**Via Homebrew:**
 ```bash
-# Via Homebrew (coming soon)
-brew install oleg-koval/tap/mac-onboarding
+brew tap oleg-koval/homebrew-tap
+brew install mac-onboarding
+```
 
-# Or build from source
+**From GitHub Releases:**
+```bash
+# Intel
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.1.0/mac-onboarding-darwin-amd64
+
+# Apple Silicon
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.1.0/mac-onboarding-darwin-arm64
+
+chmod +x mac-onboarding
+sudo mv mac-onboarding /usr/local/bin/
+```
+
+**Or build from source:**
+```bash
 git clone https://github.com/oleg-koval/mac-onboarding.git
 cd mac-onboarding
 make build
-./mac-onboarding --help
+./dist/mac-onboarding --help
 ```
 
 ### Export (Source Mac)
