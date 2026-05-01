@@ -99,6 +99,46 @@
 
     .code-block code {
       font-family: inherit;
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .quick-start {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .quick-step {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+
+    .quick-step-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+      color: #8b949e;
+      font-size: 13px;
+    }
+
+    .quick-step-number {
+      color: #58a6ff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .quick-step-command {
+      color: #79c0ff;
+      font-size: 15px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
     .feature-grid {
@@ -283,17 +323,17 @@ $ mac-onboarding install ~/onboard.tar.gz
       <div class="section-title">→ Install</div>
       <p><strong>Via Homebrew (recommended):</strong></p>
       <div class="code-block">
-<code>brew tap oleg-koval/homebrew-tap
+<code>brew tap oleg-koval/tap
 brew install mac-onboarding</code>
       </div>
 
       <p><strong>Or download from releases:</strong></p>
       <div class="code-block">
 <code><span style="color: #8b949e"># Apple Silicon (M1/M2/M3)</span>
-curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.0/mac-onboarding-darwin-arm64
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/latest/download/mac-onboarding-darwin-arm64
 
 <span style="color: #8b949e"># Intel</span>
-curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/download/v0.2.0/mac-onboarding-darwin-amd64
+curl -Lo mac-onboarding https://github.com/oleg-koval/mac-onboarding/releases/latest/download/mac-onboarding-darwin-amd64
 
 chmod +x mac-onboarding
 sudo mv mac-onboarding /usr/local/bin/</code>
@@ -307,19 +347,39 @@ sudo mv mac-onboarding /usr/local/bin/</code>
 
     <div class="section">
       <div class="section-title">→ Quick Start</div>
-      <div class="code-block">
-<code><span style="color: #8b949e"># Step 1: Copy example config</span>
-cp ~/.local/share/doc/mac-onboarding/onboard.yaml.example onboard.yaml
+      <div class="quick-start">
+        <div class="quick-step">
+          <div class="quick-step-header">
+            <span class="quick-step-number">Step 1</span>
+            <span>Copy the example config</span>
+          </div>
+          <code class="quick-step-command">cp ~/.local/share/doc/mac-onboarding/onboard.yaml.example onboard.yaml</code>
+        </div>
 
-<span style="color: #8b949e"># Step 2: Dry-run export (safe, shows what will be captured)</span>
-mac-onboarding export --dry-run ~/onboard.tar.gz
+        <div class="quick-step">
+          <div class="quick-step-header">
+            <span class="quick-step-number">Step 2</span>
+            <span>Dry-run export from the source Mac</span>
+          </div>
+          <code class="quick-step-command">mac-onboarding export --dry-run ~/onboard.tar.gz</code>
+        </div>
 
-<span style="color: #8b949e"># Step 3: Export configs from source Mac</span>
-mac-onboarding export ~/onboard.tar.gz
+        <div class="quick-step">
+          <div class="quick-step-header">
+            <span class="quick-step-number">Step 3</span>
+            <span>Create the archive</span>
+          </div>
+          <code class="quick-step-command">mac-onboarding export ~/onboard.tar.gz</code>
+        </div>
 
-<span style="color: #8b949e"># Step 4: Transfer to target Mac, then install</span>
-mac-onboarding install --dry-run ~/onboard.tar.gz
+        <div class="quick-step">
+          <div class="quick-step-header">
+            <span class="quick-step-number">Step 4</span>
+            <span>Move the archive to the target Mac and restore</span>
+          </div>
+          <code class="quick-step-command">mac-onboarding install --dry-run ~/onboard.tar.gz
 mac-onboarding install ~/onboard.tar.gz</code>
+        </div>
       </div>
     </div>
 
