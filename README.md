@@ -207,6 +207,8 @@ mac-onboarding bridge pull --dry-run
 
 - [Website](https://mac.olegkoval.com/) - Project landing page
 - [Example config](onboard.yaml.example) - Complete module configuration template
+- [Recommended setup](RECOMMENDED.md) - Suggested tools, prompts, fonts, git defaults
+- [Brewfile.example](Brewfile.example) - Reference Brewfile (CLI tools + casks + fonts)
 - [GitHub Releases](https://github.com/oleg-koval/mac-onboarding/releases) - Published binaries
 - [Issues](https://github.com/oleg-koval/mac-onboarding/issues) - Bug reports and feature requests
 
