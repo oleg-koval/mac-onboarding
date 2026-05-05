@@ -1,0 +1,77 @@
+# mac-onboarding recommended Brewfile
+#
+# Copy to ~/.Brewfile and customize:
+#   cp Brewfile.example ~/.Brewfile
+#   brew bundle install --file=~/.Brewfile
+#
+# mac-onboarding will export your ~/.Brewfile automatically.
+# Anything you add here will be captured on next `mac-onboarding export`.
+
+# ---------------------------------------------------------------------------
+# Taps
+# ---------------------------------------------------------------------------
+tap "homebrew/bundle"
+tap "homebrew/services"
+tap "umputun/apps"
+
+# ---------------------------------------------------------------------------
+# Core CLI tools
+# ---------------------------------------------------------------------------
+brew "git"
+brew "gh"               # GitHub CLI
+brew "curl"
+brew "wget"
+brew "jq"               # JSON processor
+brew "yq"               # YAML processor
+brew "tree"
+brew "htop"
+brew "tmux"
+brew "zsh"
+
+# ---------------------------------------------------------------------------
+# Shell prompt & git tooling
+# ---------------------------------------------------------------------------
+brew "starship"         # Fast cross-shell prompt — issue #4, #10
+brew "lazygit"          # Terminal UI for git — issue #11
+brew "ripgrep"          # Fast grep replacement
+brew "fzf"              # Fuzzy finder
+brew "bat"              # Better cat with syntax highlighting
+brew "eza"              # Modern ls replacement
+
+# ---------------------------------------------------------------------------
+# Umputun's tools
+# ---------------------------------------------------------------------------
+brew "umputun/apps/ralphex"   # Ralph Wiggum quote — issue #1
+brew "umputun/apps/revdiff"   # Reverse diff tool — issue #2
+
+# ---------------------------------------------------------------------------
+# Languages & runtimes (uncomment as needed)
+# ---------------------------------------------------------------------------
+# brew "node"
+# brew "go"
+# brew "rust"
+# brew "python@3.13"
+
+# ---------------------------------------------------------------------------
+# Casks — GUI apps
+# ---------------------------------------------------------------------------
+cask "kitty"            # Terminal
+cask "cursor"           # AI code editor
+cask "rectangle"        # Window manager
+cask "raycast"          # Spotlight replacement
+
+# Menu bar utilities
+cask "meetingbar"       # Calendar in menu bar — issue #9
+cask "vanilla"          # Hide menu bar icons — issue #8
+cask "swiftbar"         # Custom menu bar plugins
+cask "shottr"           # Screenshot tool
+cask "klack"            # Mechanical keyboard sounds
+cask "flux"             # Blue light filter
+
+# ---------------------------------------------------------------------------
+# Fonts — issue #5
+# ---------------------------------------------------------------------------
+cask "font-fira-code"
+cask "font-fira-code-nerd-font"
+cask "font-jetbrains-mono"
+cask "font-jetbrains-mono-nerd-font"
