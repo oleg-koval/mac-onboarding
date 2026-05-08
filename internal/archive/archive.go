@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type archiveEntry struct {
@@ -146,6 +147,60 @@ func ExtractDir(archivePath, prefix, dstDir string) error {
 		out.Close()
 	}
 	return nil
+}
+
+// BackupDir creates a timestamped snapshot of srcDir.
+// Returns the path to the backup directory (e.g., ~/.pi.backup-20260508-120000).
+func BackupDir(srcDir string) (string, error) {
+	if _, err := os.Stat(srcDir); err != nil {
+		return "", fmt.Errorf("stat %s: %w", srcDir, err)
+	}
+
+	now := time.Now().Format("20060102-150405")
+	backupPath := srcDir + ".backup-" + now
+
+	// Copy directory tree recursively
+	if err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+		dst := filepath.Join(backupPath, rel)
+
+		if info.IsDir() {
+			return os.MkdirAll(dst, info.Mode())
+		}
+		// Skip symlinks, copy only regular files
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+		// Create parent dir
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+			return err
+		}
+		// Copy file
+		src, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer src.Close()
+		out, err := os.Create(dst)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+		if _, err := io.Copy(out, src); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return "", fmt.Errorf("backup %s: %w", srcDir, err)
+	}
+
+	return backupPath, nil
 }
 
 // ListEntries returns all entry names in the archive.

@@ -2,6 +2,7 @@
 package ai_tools
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -122,6 +123,34 @@ func (m *claudeModule) Install(cfg *config.Config, opts runner.Options, src stri
 	home, _ := os.UserHomeDir()
 	base := expandHome(configPath(cfg, "claude", "config_dir", filepath.Join(home, ".claude")))
 
+	if !opts.DryRun {
+		// Check for conflicts
+		if _, err := os.Stat(base); err == nil {
+			// Directory exists
+			if opts.Force {
+				// Silent overwrite
+			} else if opts.Backup {
+				// Backup before extracting
+				backupPath, err := archive.BackupDir(base)
+				if err != nil {
+					return fmt.Errorf("claude: backup failed: %w", err)
+				}
+				fmt.Printf("  claude: backed up %s → %s\n", base, backupPath)
+			} else {
+				// Prompt user
+				fmt.Printf("  claude: %s exists. Overwrite? (y/N) ", base)
+				scanner := bufio.NewScanner(os.Stdin)
+				if !scanner.Scan() {
+					return fmt.Errorf("claude: cancelled")
+				}
+				response := strings.ToLower(strings.TrimSpace(scanner.Text()))
+				if response != "y" && response != "yes" {
+					return fmt.Errorf("claude: cancelled")
+				}
+			}
+		}
+	}
+
 	entries, _ := archive.ListEntries(src)
 	for _, entry := range entries {
 		if !strings.HasPrefix(entry, "claude/") {
@@ -203,6 +232,34 @@ func (m *codexModule) Install(cfg *config.Config, opts runner.Options, src strin
 	home, _ := os.UserHomeDir()
 	base := expandHome(configPath(cfg, "codex", "config_dir", filepath.Join(home, ".codex")))
 
+	if !opts.DryRun {
+		// Check for conflicts
+		if _, err := os.Stat(base); err == nil {
+			// Directory exists
+			if opts.Force {
+				// Silent overwrite
+			} else if opts.Backup {
+				// Backup before extracting
+				backupPath, err := archive.BackupDir(base)
+				if err != nil {
+					return fmt.Errorf("codex: backup failed: %w", err)
+				}
+				fmt.Printf("  codex: backed up %s → %s\n", base, backupPath)
+			} else {
+				// Prompt user
+				fmt.Printf("  codex: %s exists. Overwrite? (y/N) ", base)
+				scanner := bufio.NewScanner(os.Stdin)
+				if !scanner.Scan() {
+					return fmt.Errorf("codex: cancelled")
+				}
+				response := strings.ToLower(strings.TrimSpace(scanner.Text()))
+				if response != "y" && response != "yes" {
+					return fmt.Errorf("codex: cancelled")
+				}
+			}
+		}
+	}
+
 	entries, _ := archive.ListEntries(src)
 	for _, entry := range entries {
 		if !strings.HasPrefix(entry, "codex/") {
@@ -264,6 +321,32 @@ func (m *piModule) Install(cfg *config.Config, opts runner.Options, src string) 
 	if opts.DryRun {
 		fmt.Printf("  dry-run: would restore archive:pi/ → %s\n", base)
 		return nil
+	}
+
+	// Check for conflicts
+	if _, err := os.Stat(base); err == nil {
+		// Directory exists
+		if opts.Force {
+			// Silent overwrite
+		} else if opts.Backup {
+			// Backup before extracting
+			backupPath, err := archive.BackupDir(base)
+			if err != nil {
+				return fmt.Errorf("pi: backup failed: %w", err)
+			}
+			fmt.Printf("  pi: backed up %s → %s\n", base, backupPath)
+		} else {
+			// Prompt user
+			fmt.Printf("  pi: %s exists. Overwrite? (y/N) ", base)
+			scanner := bufio.NewScanner(os.Stdin)
+			if !scanner.Scan() {
+				return fmt.Errorf("pi: cancelled")
+			}
+			response := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			if response != "y" && response != "yes" {
+				return fmt.Errorf("pi: cancelled")
+			}
+		}
 	}
 
 	os.MkdirAll(base, 0755)

@@ -12,6 +12,8 @@ import (
 
 var installInput string
 var installFromStdin bool
+var installBackup bool
+var installForce bool
 
 var installCmd = &cobra.Command{
 	Use:   "install [ARCHIVE_PATH]",
@@ -65,6 +67,8 @@ Example:
 			Only:    only,
 			Verbose: verbose,
 			Input:   archivePath,
+			Backup:  installBackup,
+			Force:   installForce,
 		}
 
 		if dryRun {
@@ -78,5 +82,7 @@ Example:
 func init() {
 	installCmd.Flags().StringVarP(&installInput, "input", "i", "", "input archive path (required unless using --from-stdin)")
 	installCmd.Flags().BoolVar(&installFromStdin, "from-stdin", false, "read archive from stdin instead of file")
+	installCmd.Flags().BoolVar(&installBackup, "backup", false, "create timestamped backup of existing config before extracting")
+	installCmd.Flags().BoolVar(&installForce, "force", false, "overwrite existing config without prompting")
 	rootCmd.AddCommand(installCmd)
 }
