@@ -214,13 +214,20 @@ func addEntries(archivePath string, entries []archiveEntry) error {
 	}
 
 	// Write new archive once with all entries
-	out, err := os.Create(archivePath)
+	dir := filepath.Dir(archivePath)
+	tmp, err := os.CreateTemp(dir, filepath.Base(archivePath)+".tmp-*")
 	if err != nil {
-		return fmt.Errorf("create archive: %w", err)
+		return fmt.Errorf("create archive tmp: %w", err)
 	}
-	defer out.Close()
+	tmpName := tmp.Name()
+	committed := false
+	defer func() {
+		if !committed {
+			_ = os.Remove(tmpName)
+		}
+	}()
 
-	gw := gzip.NewWriter(out)
+	gw := gzip.NewWriter(tmp)
 	tw := tar.NewWriter(gw)
 
 	writeEntry := func(name string, d []byte) error {
@@ -250,7 +257,17 @@ func addEntries(archivePath string, entries []archiveEntry) error {
 	if err := tw.Close(); err != nil {
 		return err
 	}
-	return gw.Close()
+	if err := gw.Close(); err != nil {
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpName, archivePath); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }
 
 // addEntry is the internal writer. It rebuilds the archive with the new entry appended.
