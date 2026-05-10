@@ -13,6 +13,8 @@ type Options struct {
 	Verbose bool
 	Output  string // export archive path
 	Input   string // install archive path
+	Backup  bool   // create timestamped backup before extracting
+	Force   bool   // overwrite without prompting
 }
 
 // Module is the interface every module must satisfy.
